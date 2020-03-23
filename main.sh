@@ -8,6 +8,7 @@ purpose=$1
 IFS=$'\r\n' GLOBIGNORE='*' command eval 'calFile=($(cat $calFileDest))'
 x=0
 y=1
+date=$(date +%d/%m/%y)
 
 # Define Core Functions
 
@@ -32,15 +33,28 @@ printHelp(){
 
 }
 
+findEvents(){
+	case $1 in
+		today)	target=$(date +%d/%m/%y)						;;
+	esac
+	while [ $x -lt ${#calFile[@]} ]
+	do
+		test "${calFile[$x]}" = "$target" && echo "${calFile[$y]}" 
+		((x=x+1))
+		((y=x-1))
+	done
+
+}
+
 printEvents(){
 
 	case $1 in
-		today)	echo "Showing events today"		;;
-		*)	echo "Showing all Events"; echo
+		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; findEvents today		;;
+		*)	echo "SHOWING ALL EVENTS"; echo
 			for i in "${calFile[@]}"
 			do
 				echo "$i"
-			done					;;
+			done									;;
 	esac
 
 }
@@ -51,8 +65,8 @@ newEvent(){
 	eventDateCreateRaw="$2"
 	eventDateCreate=$(date -d "$eventDateCreateRaw" "$calFormat" 2>/dev/null) || return 1 
 	[ $? -eq 1 ] 
-	 echo "$eventDetailsCreate"  >> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
-	echo "$eventDateCreate"      >> "$calFileDest"
+	echo "$eventDetailsCreate"	>> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
+	echo "$eventDateCreate"      	>> "$calFileDest"
 }
 
 deleteEvent(){
