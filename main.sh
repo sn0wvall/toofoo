@@ -9,6 +9,7 @@ IFS=$'\r\n' GLOBIGNORE='*' command eval 'calFile=($(cat $calFileDest))'
 x=0
 y=1
 date=$(date +%d/%m/%y)
+found=false
 
 # Define Core Functions
 
@@ -20,6 +21,7 @@ printHelp(){
 		show
 			- Parameters: [today|tomorrow|yesterday|date]
 			- Shows events on the specified day
+			e.g. toofoo show date 12/12/20
 
 		new
 			- Parameters: n/a
@@ -36,24 +38,31 @@ printHelp(){
 findEvents(){
 	case $1 in
 		today)	target=$(date +%d/%m/%y)						;;
+		*)	target=$(date -d "$1" +%d/%m/%y)
 	esac
 	while [ $x -lt ${#calFile[@]} ]
 	do
-		test "${calFile[$x]}" = "$target" && echo "${calFile[$y]}" 
+		test "${calFile[$x]}" = "$target" && echo "${calFile[$y]}" && found=true 
 		((x=x+1))
 		((y=x-1))
 	done
+	test $found = false && echo "No Events" || return 0
 
 }
 
 printEvents(){
+	
+	test "$1" = "date" && test -z $2 && echo "Error: \"date\" parameter requires a date" && return 1
 
 	case $1 in
 		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; findEvents today		;;
+		date)	printf "SHOWING EVENTS ON $2\n\n"; findEvents $2 			;;
 		*)	echo "SHOWING ALL EVENTS"; echo
-			for i in "${calFile[@]}"
+			while [ $x -lt ${#calFile[@]}  ]
 			do
-				echo "$i"
+				echo "${calFile[$x]}, on the ${calFile[$y]}"
+				((x=x+2))
+				((y=y+2))
 			done									;;
 	esac
 
@@ -89,7 +98,7 @@ case $purpose in
 
 	     	newEvent "$eventDetails" "$eventDate"						;;
 	
-	show) 	printEvents $2									;;
+	show) 	printEvents $2 $3									;;
 
 	del)	printf "Event Name to Delete: "; read deleteTarget
 			deleteEvent "$deleteTarget"						;;
