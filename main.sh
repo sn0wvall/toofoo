@@ -13,6 +13,13 @@ found=false
 
 # Define Core Functions
 
+dateCreate(){
+	targetDate="$1"
+	targetDate1=$(echo "$targetDate" | grep -e '-' -e '/' | cut -d'/' -f1)
+	test $targetDate1 -gt 12 && echo "$targetDate" && return 0
+	echo $(date -d "$targetDate" "$calFormat")
+}
+
 printHelp(){	
 
     cat <<-EOF
@@ -60,10 +67,13 @@ printEvents(){
 		*)	echo "SHOWING ALL EVENTS"; echo
 			while [ $x -lt ${#calFile[@]}  ]
 			do
-				echo "${calFile[$x]}, on the ${calFile[$y]}"
+				echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
 				((x=x+2))
 				((y=y+2))
-			done									;;
+			done								
+
+			test $found = false && echo "No Events" || return 0
+
 	esac
 
 }
@@ -72,8 +82,7 @@ newEvent(){
 
 	eventDetailsCreate="$1"
 	eventDateCreateRaw="$2"
-	eventDateCreate=$(date -d "$eventDateCreateRaw" "$calFormat" 2>/dev/null) || return 1 
-	[ $? -eq 1 ] 
+	eventDateCreate=$(dateCreate $eventDateCreateRaw) # Why won't it convert to dd/mm/yy format? 
 	echo "$eventDetailsCreate"	>> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
 	echo "$eventDateCreate"      	>> "$calFileDest"
 }
@@ -98,12 +107,13 @@ case $purpose in
 
 	     	newEvent "$eventDetails" "$eventDate"						;;
 	
-	show) 	printEvents $2 $3									;;
+	show) 	printEvents $2 $3								;;
 
-	del)	printf "Event Name to Delete: "; read deleteTarget
+	del)	test -n "$2" && deleteTarget="$2" && deleteEvent "$deleteTarget" && exit 
+		printf "Event Name to Delete: "; read deleteTarget
 			deleteEvent "$deleteTarget"						;;
 
 	help)	printHelp									;;
 
-	*)	echo "\"$1\" is not a known command"						;;
+	*)	echo "\"$1\" is not a known command, use \"help\" for command list"		;;
 esac
