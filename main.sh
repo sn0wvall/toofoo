@@ -14,9 +14,19 @@ found=false
 # Define Core Functions
 
 dateCreate(){
+
 	targetDate="$1"
-	targetDate1=$(echo "$targetDate" | grep -e '-' -e '/' | cut -d'/' -f1)
-	test $targetDate1 -gt 12 && echo "$targetDate" && return 0
+	errorCode=0
+
+	targetDateGrep=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' || errorCode=1 && date -d "$targetDate" "$calFormat" &>/dev/null || return 1)
+	test "$errorCode" != "0" && echo $(date -d "$targetDate" "$calFormat") && return 0
+	
+	targetDate1=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f1)
+	targetDate2=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f2)
+
+	test $targetDate1 -gt 12 && test $targetDate2 -lt 13 && echo "$targetDate" && return 0
+	test $targetDate1 -gt 12 && test $targetDate2 -gt 12 && return 1
+
 	echo $(date -d "$targetDate" "$calFormat")
 }
 
@@ -82,7 +92,8 @@ newEvent(){
 
 	eventDetailsCreate="$1"
 	eventDateCreateRaw="$2"
-	eventDateCreate=$(dateCreate $eventDateCreateRaw) # Why won't it convert to dd/mm/yy format? 
+	eventDateCreate=$(dateCreate "$eventDateCreateRaw")
+       	test $? -eq 1 && exit 1
 	echo "$eventDetailsCreate"	>> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
 	echo "$eventDateCreate"      	>> "$calFileDest"
 }
@@ -102,18 +113,18 @@ deleteEvent(){
 
 case $purpose in
 
-	add) 	printf "New event:"; read eventDetails
-	     	printf "Date:"; read eventDate
+	add|new) 	printf "New event:"; read eventDetails
+	     		printf "Date:"; read eventDate
 
-	     	newEvent "$eventDetails" "$eventDate"						;;
+	     		newEvent "$eventDetails" "$eventDate"						;;
 	
-	show) 	printEvents $2 $3								;;
+	show|print) 	printEvents $2 $3								;;
 
-	del)	test -n "$2" && deleteTarget="$2" && deleteEvent "$deleteTarget" && exit 
-		printf "Event Name to Delete: "; read deleteTarget
-			deleteEvent "$deleteTarget"						;;
+	del|rm)		test -n "$2" && deleteTarget="$2" && deleteEvent "$deleteTarget" && exit 
+			printf "Event Name to Delete: "; read deleteTarget
+			deleteEvent "$deleteTarget"							;;
 
-	help)	printHelp									;;
+	help|h)		printHelp									;;
 
-	*)	echo "\"$1\" is not a known command, use \"help\" for command list"		;;
+	*)		echo "\"$1\" is not a known command, use \"help\" for command list"		;;
 esac
