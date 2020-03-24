@@ -13,23 +13,6 @@ found=false
 
 # Define Core Functions
 
-dateCreate(){
-
-	targetDate="$1"
-	errorCode=0
-	done=false
-
-	grep -e '-' -e '/' -e '\.'<<<$targetDate || echo "$(date -d "$targetDate" "$calFormat")" && return 0
-
-	targetDate1=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f1)
-	targetDate2=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f2)
-
-	test $targetDate1 -gt 12 && test $targetDate2 -lt 13 && echo "$targetDate" && return 0
-	test $targetDate1 -gt 12 && test $targetDate2 -gt 12 && return 1
-
-	echo $(date -d "$targetDate" "$calFormat")
-}
-
 printHelp(){	
 
     cat <<-EOF
@@ -85,7 +68,23 @@ printEvents(){
 			test $found = false && echo "No Events" || return 0
 
 	esac
+}
 
+dateCreate(){
+
+	targetDate="$1"
+	errorCode=0
+
+	grep -q -e '-' -e '/' -e '\.'<<<$targetDate || echo "3 $(date -d "$targetDate" "$calFormat")" && return 0
+
+	targetDate1=$(echo "4 $targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f1)
+	targetDate2=$(echo "5 $targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f2)
+
+	test $targetDate1 -gt 12 && test $targetDate2 -lt 13 && echo "$targetDate" && return 0
+	test $targetDate1 -lt 13 && test $targetDate2 -gt 12 && echo $(date -d "$targetDate" "$calFormat") && return 2 
+	test $targetDate1 -gt 12 && test $targetDate2 -gt 12 && return 1
+
+	echo "$(date -d "$targetDate" "$calFormat")"
 }
 
 newEvent(){
@@ -93,7 +92,8 @@ newEvent(){
 	eventDetailsCreate="$1"
 	eventDateCreateRaw="$2"
 	eventDateCreate=$(dateCreate "$eventDateCreateRaw")
-       	test $? -eq 1 && exit 1
+       	test $? -ne 0 && exit 1
+
 	echo "$eventDetailsCreate"	>> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
 	echo "$eventDateCreate"      	>> "$calFileDest"
 }
