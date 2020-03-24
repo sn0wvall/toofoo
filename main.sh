@@ -17,10 +17,10 @@ dateCreate(){
 
 	targetDate="$1"
 	errorCode=0
+	done=false
 
-	targetDateGrep=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' || errorCode=1 && date -d "$targetDate" "$calFormat" &>/dev/null || return 1)
-	test "$errorCode" != "0" && echo $(date -d "$targetDate" "$calFormat") && return 0
-	
+	grep -e '-' -e '/' -e '\.'<<<$targetDate || echo "$(date -d "$targetDate" "$calFormat")" && return 0
+
 	targetDate1=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f1)
 	targetDate2=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f2)
 
