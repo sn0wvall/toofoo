@@ -18,17 +18,17 @@ printHelp(){
     cat <<-EOF
 		usage: toofoo [show|new|del]
 		
-		show
+		show|print
 			- Parameters: [today|tomorrow|yesterday|date]
 			- Shows events on the specified day
 			e.g. toofoo show date 12/12/20
 
-		new
+		new|add
 			- Parameters: n/a
 			- Queries user for new event and date
 			- Date formats are those listed in date(1): e.g. 5 March 2019, 5/7/19
 		
-		del
+		del|rm
 			- parameters: n/a
 			- Queries user for event to delete
 	EOF
@@ -75,24 +75,29 @@ dateCreate(){
 	targetDate="$1"
 	errorCode=0
 
-	grep -q -e '-' -e '/' -e '\.'<<<$targetDate || echo "3 $(date -d "$targetDate" "$calFormat")" && return 0
+	grep -q -e '-' -e '/' -e '\.'<<<$targetDate || return 1
 
-	targetDate1=$(echo "4 $targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f1)
-	targetDate2=$(echo "5 $targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f2)
+	targetDate1=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f1)
+	targetDate2=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f2)
 
-	test $targetDate1 -gt 12 && test $targetDate2 -lt 13 && echo "$targetDate" && return 0
-	test $targetDate1 -lt 13 && test $targetDate2 -gt 12 && echo $(date -d "$targetDate" "$calFormat") && return 2 
-	test $targetDate1 -gt 12 && test $targetDate2 -gt 12 && return 1
+	test $targetDate1 -gt 12 && test $targetDate2 -lt 13 && return 2
+	test $targetDate1 -lt 13 && test $targetDate2 -gt 12 && return 1 
+	test $targetDate1 -gt 12 && test $targetDate2 -gt 12 && return 3
 
-	echo "$(date -d "$targetDate" "$calFormat")"
+	return 1
 }
 
 newEvent(){
 
 	eventDetailsCreate="$1"
 	eventDateCreateRaw="$2"
-	eventDateCreate=$(dateCreate "$eventDateCreateRaw")
-       	test $? -ne 0 && exit 1
+	dateCreate "$eventDateCreateRaw"
+
+	case $? in
+		1) eventDateCreate="$(date -d "$targetDate" "$calFormat")"			;;
+		2) eventDateCreate=$eventDateCreateRaw						;;
+		*) exit 1									;;
+	esac
 
 	echo "$eventDetailsCreate"	>> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
 	echo "$eventDateCreate"      	>> "$calFileDest"
@@ -104,7 +109,7 @@ deleteEvent(){
 	while [ $x -lt ${#calFile[@]} ]
 	do
 		test "${calFile[$x]}" = "$target" && sed -i "$y"d $calFileDest && sed -i "$y"d $calFileDest && echo "Deleted Event ${calFile[$x]}" && return 0
-		((x=x+2))			# Optimally, I would have used some inbuilt (()) style maths to calculate line number, however sed wouldn't work with it
+		((x=x+2))
 		((y=y+2))			# Therefore, I opted for a more ham-fisted solution of using two variables.
 	done
 	echo "Event Name not Found"
