@@ -23,7 +23,7 @@ A simple calendar app for scheduling and viewing tasks in your terminal
 
 Config Files are searched for in 
 
-* $XDG\_CONFIG\_HOME/toofoo/config
+* $XDG\_CONFIG_HOME/toofoo/config
 * $HOME/.config/toofoo/config
 * $HOME/.toofoorc
 * $HOME/.toofoo/config"
