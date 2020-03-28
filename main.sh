@@ -2,16 +2,35 @@
 
 # Define Core Variables
 
-calFormat="+%d/%m/%y"
-calFileDest="/home/alpha/.toofoo/cal"
 purpose=$1
-IFS=$'\r\n' GLOBIGNORE='*' command eval 'calFile=($(cat $calFileDest))'
 x=0
 y=1
+z=0
 date=$(date +%d/%m/%y)
 found=false
+confFileLocations=("$XDG_CONFIG_HOME/toofoo/config" "$HOME/.toofoo/config" "$HOME/.toofoorc" "$HOME/.config/toofoo/config")
 
 # Define Core Functions
+
+confFileGenerate(){
+
+	while [ $z -lt ${#confFileLocations[@]} ]; do
+		test -e "${confFileLocations[$z]}" && confFile="${confFileLocations[$z]}"
+		((z=z+1))
+	done
+	test "$confFile" && return 0
+	printf "Creating new config file in $HOME/.config/toofoo/. If you don't want to use a different path, leave this field blank: "; read $confFileLocationNew
+
+	test -z "$confFileLocationNew" && confFileLocationNew="$XDG_CONFIG_HOME/toofoo/"
+	test -d "$confFileLocationNew" || mkdir -p "$confFileLocationNew"
+
+	echo "Desired Calendar File Absolute Path (e.g. /home/user/.toofoo/cal): "; read calFileDest
+	echo "Desired Date Format (Please use standard date(1) units, e.g. %d): "; read calFormat
+	echo "calFileDest=$calFileDest" >> "$confFileLocationNew/config"
+	echo "calFormat=$calFormat"	>> "$confFileLocationNew/config"
+
+	confFile="$confFileLocationNew"
+}
 
 printHelp(){	
 
@@ -36,6 +55,9 @@ printHelp(){
 }
 
 findEvents(){
+
+	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
+
 	case $1 in
 		today)	target=$(date +%d/%m/%y)						;;
 		*)	target=$(date -d "$1" +%d/%m/%y)
@@ -51,29 +73,28 @@ findEvents(){
 }
 
 printEvents(){
+
+	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
 	
 	test "$1" = "date" && test -z $2 && echo "Error: \"date\" parameter requires a date" && return 1
 
 	case $1 in
 		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; findEvents today		;;
 		date)	printf "SHOWING EVENTS ON $2\n\n"; findEvents $2 			;;
-		*)	echo "SHOWING ALL EVENTS"; echo
-			while [ $x -lt ${#calFile[@]}  ]
-			do
+		*)	echo "SHOWING ALL EVENTS"; echo 
+			while [ $x -lt ${#calFile[@]} ]; do
 				echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
 				((x=x+2))
 				((y=y+2))
 			done								
 
 			test $found = false && echo "No Events" || return 0
-
 	esac
 }
 
 dateCreate(){
 
 	targetDate="$1"
-	errorCode=0
 
 	grep -q -e '-' -e '/' -e '\.'<<<$targetDate || return 1
 
@@ -94,7 +115,7 @@ newEvent(){
 	dateCreate "$eventDateCreateRaw"
 
 	case $? in
-		1) eventDateCreate="$(date -d "$targetDate" "$calFormat")"			;;
+		1) eventDateCreate="$(date -d "$targetDate" "+$calFormat")"			;;
 		2) eventDateCreate=$eventDateCreateRaw						;;
 		*) exit 1									;;
 	esac
@@ -105,16 +126,22 @@ newEvent(){
 
 deleteEvent(){
 
+	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
+
 	target="$1"
 	while [ $x -lt ${#calFile[@]} ]
 	do
 		test "${calFile[$x]}" = "$target" && sed -i "$y"d $calFileDest && sed -i "$y"d $calFileDest && echo "Deleted Event ${calFile[$x]}" && return 0
 		((x=x+2))
-		((y=y+2))			# Therefore, I opted for a more ham-fisted solution of using two variables.
+		((y=y+2))
 	done
 	echo "Event Name not Found"
 
 }
+
+confFileGenerate
+
+source "$confFile"
 
 case $purpose in
 
@@ -131,5 +158,5 @@ case $purpose in
 
 	help|h)		printHelp									;;
 
-	*)		echo "\"$1\" is not a known command, use \"help\" for command list"		;;
+	*)		printEvents today								;;
 esac
