@@ -2,7 +2,7 @@
 
 A simple calendar app for scheduling and viewing tasks in your terminal
 
-	Usage: toofoo [show|new|del]
+	toofoo [show|new|del]
 
 ## show|print
 

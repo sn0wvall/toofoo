@@ -19,17 +19,21 @@ confFileGenerate(){
 		((z=z+1))
 	done
 	test "$confFile" && return 0
-	printf "Creating new config file in $HOME/.config/toofoo/. If you don't want to use a different path, leave this field blank: "; read $confFileLocationNew
+	printf "Creating new config file in $HOME/.config/toofoo/. If you don't want to use a different path, leave this field blank: "; read -r confFileLocationNew
 
 	test -z "$confFileLocationNew" && confFileLocationNew="$XDG_CONFIG_HOME/toofoo/"
 	test -d "$confFileLocationNew" || mkdir -p "$confFileLocationNew"
 
-	echo "Desired Calendar File Absolute Path (e.g. /home/user/.toofoo/cal): "; read calFileDest
-	echo "Desired Date Format (Please use standard date(1) units, e.g. %d): "; read calFormat
+	echo "Desired Calendar File Absolute Path (e.g. /home/user/.toofoo/cal): "; read -r calFileDest
+	echo "Desired Date Format (Please use standard date(1) units, e.g. %d): "; read -r calFormat
 	echo "calFileDest=$calFileDest" >> "$confFileLocationNew/config"
 	echo "calFormat=$calFormat"	>> "$confFileLocationNew/config"
 
 	confFile="$confFileLocationNew"
+
+	echo "Configuration Complete. Run script again to apply config."
+
+	exit 0
 }
 
 printHelp(){	
@@ -54,6 +58,19 @@ printHelp(){
 
 }
 
+findEventsOrdered(){
+	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
+	
+	while [ $x -lt "${#calFile[@]}" ]; do
+
+				echo "$x" && found=true
+				((x=x+1))
+	
+	done
+
+	test $found = false && echo "No Events" || return 0
+}
+
 findEvents(){
 
 	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
@@ -74,21 +91,19 @@ findEvents(){
 
 printEvents(){
 
-	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
-	
+	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat "$calFileDest"))"
 	test "$1" = "date" && test -z $2 && echo "Error: \"date\" parameter requires a date" && return 1
 
 	case $1 in
 		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; findEvents today		;;
 		date)	printf "SHOWING EVENTS ON $2\n\n"; findEvents $2 			;;
-		*)	echo "SHOWING ALL EVENTS"; echo 
-			while [ $x -lt ${#calFile[@]} ]; do
-				echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
-				((x=x+2))
-				((y=y+2))
-			done								
+		*)	echo "SHOWING ALL EVENTS"; findEventsOrdered 
+			#while [ $x -lt ${#calFile[@]} ]; do
+			#	echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
+			#	((x=x+2))
+			#	((y=y+2))
+			#done								
 
-			test $found = false && echo "No Events" || return 0
 	esac
 }
 
@@ -120,7 +135,7 @@ newEvent(){
 		*) exit 1									;;
 	esac
 
-	echo "$eventDetailsCreate"	>> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
+	echo "\"$eventDetailsCreate\""	>> "$calFileDest"				 #In future, ordering the events in the file by date may be a useful feature.
 	echo "$eventDateCreate"      	>> "$calFileDest"
 }
 
