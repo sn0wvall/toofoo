@@ -102,12 +102,12 @@ printEvents(){											# Output events to the user
 	case $1 in
 		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; findEvents today		;;
 		date)	printf "SHOWING EVENTS ON $2\n\n"; findEvents $2 			;;
-		*)	echo "SHOWING ALL EVENTS"; findEventsOrdered 
-			#while [ $x -lt ${#calFile[@]} ]; do
-			#	echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
-			#	((x=x+2))
-			#	((y=y+2))
-			#done								
+		*)	echo "SHOWING ALL EVENTS"; echo 
+			while [ $x -lt ${#calFile[@]} ]; do
+				echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
+				((x=x+2))
+				((y=y+2))
+			done								
 
 	esac
 }
