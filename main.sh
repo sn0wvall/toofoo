@@ -62,9 +62,44 @@ sortEvents(){
 # TODO
 # + Load all events into an array
 # + Cut through those dates usind cut -d'/'
-# + Sort by year, then month, then day
-# + Insertion sort will be used, as users will likely add events vaguely in the order of how soon they will occur, so the data set is already partially sorted
+# - Sort by year, then month, then day
 
+	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
+	emptyPass=false
+
+	x=3
+	
+	# Shockingly clunky, but it working first is more important than optimisation
+
+	while [ $emptyPass != true ]; do
+		while [ $y -lt ${#calFile[@]} ]; do
+
+			emptyPass=false
+		
+			value1y=$(echo "${calFile[$y]}" | cut -d'/' -f1)
+			value2y=$(echo "${calFile[$y]}" | cut -d'/' -f2)
+			value3y=$(echo "${calFile[$y]}" | cut -d'/' -f3)
+
+			value1x=$(echo "${calFile[$x]}" | cut -d'/' -f1)
+			value2x=$(echo "${calFile[$x]}" | cut -d'/' -f2)
+			value3x=$(echo "${calFile[$x]}" | cut -d'/' -f3)
+
+			test -n $"$value3y" && echo "$value3y declared" || echo predeclared
+			#if [ "$value3y" -lt "$value3x"  ]; then
+			#	xValT="${calFile[$y]}"
+			#	yValT="${calFile[$x]}"
+			#	emptyPass=true
+			#	exit 1
+			#else
+			#	exit 3
+			#fi
+
+			emptyPass=true	
+		
+			((y=y+2))
+			((x=x+2))
+		done
+	done	
 
 
 }
