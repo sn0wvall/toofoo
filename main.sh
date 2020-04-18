@@ -57,53 +57,6 @@ printHelp(){											# Output the help information to the user
 
 }
 
-sortEvents(){
-
-# TODO
-# + Load all events into an array
-# + Cut through those dates usind cut -d'/'
-# - Sort by year, then month, then day
-
-	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
-	emptyPass=false
-
-	x=3
-	
-	# Shockingly clunky, but it working first is more important than optimisation
-
-	while [ $emptyPass != true ]; do
-		while [ $y -lt ${#calFile[@]} ]; do
-
-			emptyPass=false
-		
-			value1y=$(echo "${calFile[$y]}" | cut -d'/' -f1)
-			value2y=$(echo "${calFile[$y]}" | cut -d'/' -f2)
-			value3y=$(echo "${calFile[$y]}" | cut -d'/' -f3)
-
-			value1x=$(echo "${calFile[$x]}" | cut -d'/' -f1)
-			value2x=$(echo "${calFile[$x]}" | cut -d'/' -f2)
-			value3x=$(echo "${calFile[$x]}" | cut -d'/' -f3)
-
-			test -n $"$value3y" && echo "$value3y declared" || echo predeclared
-			#if [ "$value3y" -lt "$value3x"  ]; then
-			#	xValT="${calFile[$y]}"
-			#	yValT="${calFile[$x]}"
-			#	emptyPass=true
-			#	exit 1
-			#else
-			#	exit 3
-			#fi
-
-			emptyPass=true	
-		
-			((y=y+2))
-			((x=x+2))
-		done
-	done	
-
-
-}
-
 findEvents(){											# Sort and output events using a target date
 
 	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
@@ -130,12 +83,12 @@ printEvents(){											# Output events to the user
 	case $1 in
 		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; 	findEvents today	;;
 		date)	printf "SHOWING EVENTS ON $2\n\n"; 		findEvents $2 		;;
-		*)	echo "SHOWING ALL EVENTS"; 			sortEvents
-			#while [ $x -lt ${#calFile[@]} ]; do
-			#	echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
-			#	((x=x+2))
-			#	((y=y+2))
-			#done								
+		*)	echo "SHOWING ALL EVENTS"
+			while [ $x -lt ${#calFile[@]} ]; do
+				echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
+				((x=x+2))
+				((y=y+2))
+			done								
 			test $found = true || echo "No Events"
 	esac
 }
