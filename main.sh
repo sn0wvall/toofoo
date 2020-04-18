@@ -149,7 +149,7 @@ deleteEvent(){											# Remove events from the calendar file using sed
 	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
 
 	target="$1"
-	test $target="*" && echo > "$calFileDest" && echo "Deleted all events" && return 0
+	test "$target" = "*" && echo > "$calFileDest" && echo "Deleted all events" && return 0
 	while [ $x -lt ${#calFile[@]} ]
 	do
 		test "${calFile[$x]}" = "$target" && sed -i "$y"d $calFileDest && sed -i "$y"d $calFileDest && echo "Deleted Event ${calFile[$x]}" && return 0
