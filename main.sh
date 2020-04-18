@@ -81,9 +81,10 @@ printEvents(){											# Output events to the user
 	test "$1" = "date" && test -z $2 && echo "Error: \"date\" parameter requires a date" && return 1
 
 	case $1 in
-		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; 	findEvents today	;;
-		date)	printf "SHOWING EVENTS ON $2\n\n"; 		findEvents $2 		;;
-		*)	echo "SHOWING ALL EVENTS"
+		today)	printf "SHOWING EVENTS TODAY, $date\n\n"; findEvents today		;;
+		date)	printf "SHOWING EVENTS ON $2\n\n"; findEvents $2 			;;
+		*)	echo "SHOWING ALL EVENTS"; echo 
+
 			while [ $x -lt ${#calFile[@]} ]; do
 				echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
 				((x=x+2))
