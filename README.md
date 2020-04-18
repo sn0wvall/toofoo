@@ -8,7 +8,7 @@ A simple calendar app for scheduling and viewing tasks in your terminal
 
 * Parameters: [today|tomorrow|yesterday|date]
 * Shows events on the specified day
-* e.g. toofoo show date 12/12/20
+* e.g. toofoo show date 30/12/20
   
 ## new|add
 * Parameters: n/a
