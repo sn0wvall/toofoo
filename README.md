@@ -16,8 +16,9 @@ A simple calendar app for scheduling and viewing tasks in your terminal
 * Date formats are those listed in date(1): e.g. 5 March 2019, 5/7/19
                   
 ## del|rm
-* parameters: n/a
-* Queries user for event to delete
+* parameters: Event Number
+* Queries user for event number, or deletes the argument following del|rm to delete
+* e.g. toofoo del 5
 
 ## Configuration Files
 
@@ -26,4 +27,4 @@ Configuration Files are searched for in
 * $XDG\_CONFIG\_HOME/toofoo/config
 * $HOME/.config/toofoo/config
 * $HOME/.toofoorc
-* $HOME/.toofoo/config"
+* $HOME/.toofoo/config
