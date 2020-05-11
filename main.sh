@@ -1,10 +1,16 @@
 #!/bin/bash
 
+#TODO:
+# Recurring events
+# Numbered deletion
+
+
 # Define Core Variables
 
 x=0
 y=1
 z=0
+w=0
 date=$(date +%d/%m/%y)
 found=false
 confFileLocations=("$XDG_CONFIG_HOME/toofoo/config" "$HOME/.toofoo/config" "$HOME/.toofoorc" "$HOME/.config/toofoo/config")
@@ -53,6 +59,7 @@ printHelp(){											# Output the help information to the user
 		del|rm
 			- parameters: n/a
 			- Queries user for event to delete
+
 	EOF
 
 }
@@ -62,15 +69,29 @@ findEvents(){											# Sort and output events using a target date
 	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
 
 	case $1 in
-		today)	target=$(date +%d/%m/%y)						;;
+		today)	target=$(date +%d/%m/%y)						
+			target2=$(date +%m/%d/%y)
+			;;
 		*)	target=$(date -d "$1" +%d/%m/%y)
 	esac
 	while [ $x -lt ${#calFile[@]} ]
 	do
-		test "${calFile[$x]}" = "$target" && echo "${calFile[$y]}" && found=true 
+		test "${calFile[$x]}" = "$target" && echo "$y ${calFile[$y]}" && found=true 
 		((x=x+1))
 		((y=x-1))
 	done
+	
+	x=0
+	y=0
+
+	while [ $x -lt ${#calFile[@]} ]
+	do
+		((number=$y-$w))
+		test "${calFile[$x]}" = "$target2" && echo "$y ${calFile[$y]}" && found=true 
+		((x=x+1))
+		((y=x-1))
+	done
+
 	test $found = false && echo "No Events" || return 0
 
 }
@@ -86,7 +107,8 @@ printEvents(){											# Output events to the user
 		*)	echo "SHOWING ALL EVENTS"; echo 
 
 			while [ $x -lt ${#calFile[@]} ]; do
-				echo "${calFile[$x]}, on ${calFile[$y]}" && found=true
+				((number=$y-$w))
+				echo "$number ${calFile[$x]}, on ${calFile[$y]}" && found=true && ((w=w+1))
 				((x=x+2))
 				((y=y+2))
 			done								
@@ -152,9 +174,11 @@ deleteEvent(){											# Remove events from the calendar file using sed
 	test "$target" = "*" && echo > "$calFileDest" && echo "Deleted all events" && return 0
 	while [ $x -lt ${#calFile[@]} ]
 	do
-		test "${calFile[$x]}" = "$target" && sed -i "$y"d $calFileDest && sed -i "$y"d $calFileDest && echo "Deleted Event ${calFile[$x]}" && return 0
+		((number=$y-$w))
+		test "$number" = "$target" && sed -i "$y"d $calFileDest && sed -i "$y"d $calFileDest && echo "Deleted Event ${calFile[$x]}" && return 0
 		((x=x+2))
 		((y=y+2))
+		((w=w+1))
 	done
 	echo "Event Name not Found"
 
@@ -174,7 +198,7 @@ case $1 in
 	show|print) 	printEvents $2 $3								;;
 
 	del|rm)		test -n "$2" && deleteTarget="$2" && deleteEvent "$deleteTarget" && exit 
-			printf "Event Name to Delete: "; read deleteTarget
+			printf "Event Number to Delete: "; read deleteTarget
 			deleteEvent "$deleteTarget"							;;
 
 	help|h)		printHelp									;;
