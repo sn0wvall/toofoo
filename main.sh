@@ -2,7 +2,6 @@
 
 #TODO:
 # Recurring events
-# Numbered deletion
 
 
 # Define Core Variables
@@ -76,7 +75,7 @@ findEvents(){											# Sort and output events using a target date
 	esac
 	while [ $x -lt ${#calFile[@]} ]
 	do
-		test "${calFile[$x]}" = "$target" && echo "$y ${calFile[$y]}" && found=true 
+		test "${calFile[$x]}" = "$target" && echo "${calFile[$y]}" && found=true 
 		((x=x+1))
 		((y=x-1))
 	done
@@ -84,10 +83,12 @@ findEvents(){											# Sort and output events using a target date
 	x=0
 	y=0
 
+	# Redundant checks for when dates are in a different format
+
 	while [ $x -lt ${#calFile[@]} ]
 	do
 		((number=$y-$w))
-		test "${calFile[$x]}" = "$target2" && echo "$y ${calFile[$y]}" && found=true 
+		test "${calFile[$x]}" = "$target2" && echo "${calFile[$y]}" && found=true 
 		((x=x+1))
 		((y=x-1))
 	done
@@ -132,6 +133,33 @@ dateCreate(){											# Converts dates into a standardized format
 	return 1
 }
 
+mathable(){
+
+	targetDate="$1"
+
+	grep -q -e '-' -e '/' -e '\.'<<<$targetDate || return 1
+
+	targetDate1=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f1)
+	targetDate2=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f2)
+	targetDate3=$(echo "$targetDate" | grep -e '-' -e '/' -e '.' | cut -d'/' -f3)
+
+	test $targetDate1 -gt 12 && test $targetDate2 -lt 13 && convertOrder=1
+	test $targetDate1 -lt 13 && test $targetDate2 -gt 12 && convertOrder=2
+	test $targetDate1 -lt 12 && test $targetDate2 -lt 12 && convertOrder=2
+
+
+
+	case $convertOrder in
+		
+		1)	mathDate="$targetDate2/$targetDate1/$targetDate3"			;;
+		2)	mathDate="$targetDate"										;;
+
+	esac
+
+	echo $mathDate
+
+}
+
 newEvent(){											# Generate new events and write them to the calendar file
 
 	IFS=$'\r\n' GLOBIGNORE='*' command eval "calFile=($(cat $calFileDest))"
@@ -144,6 +172,34 @@ newEvent(){											# Generate new events and write them to the calendar file
 		1) eventDateCreate="$(date -d "$targetDate" "+$calFormat")"			;;
 		2) eventDateCreate=$eventDateCreateRaw						;;
 		*) exit 1									;;
+	esac
+
+	case $3 in
+		yes|y)
+			printf "Input repeat period (daily): "; read -r period
+			printf "Iterations: "; read -r iterations
+			case $period in
+				daily)	
+					iterationsDone=0
+					eventDateCreateRaw="$2"
+					mathDate=$(mathable $eventDateCreateRaw)
+
+					while [ $iterationsDone -lt $iterations ]; do
+
+						newDate=$(date -d "$mathDate +$iterationsDone day")
+						newEvent "$eventDetailsCreate" "$newDate"
+						((iterationsDone=iterationsDone+1))
+						
+					done
+					exit 0
+				;;
+				weekly)								
+				
+				;;
+				yearly)								
+				
+				;;
+			esac	
 	esac
 	
 	# Before doing anything else, is the new event's date the first event?
@@ -192,8 +248,9 @@ case $1 in
 
 	add|new) 	printf "New event:"; read eventDetails
 	     		printf "Date:"; read eventDate
+			printf "Recurring:"; read eventType
 
-	     		newEvent "$eventDetails" "$eventDate"						;;
+	     		newEvent "$eventDetails" "$eventDate" "$eventType"				;;
 	
 	show|print) 	printEvents $2 $3								;;
 
