@@ -129,6 +129,9 @@ dateCreate(){											# Converts dates into a standardized format
 	test $targetDate1 -gt 12 && test $targetDate2 -lt 13 && return 2			# Exit Code 2 Represents "use raw date"
 	test $targetDate1 -lt 13 && test $targetDate2 -gt 12 && return 1 			# Exit Code 1 Represents "use standard date(1) conversion
 	test $targetDate1 -gt 12 && test $targetDate2 -gt 12 && return 3			# All other non-zero exit codes are invalid dates
+	test $targetDate1 -gt 31 && test $targetDate2 -gt 12 && return 3			# All other non-zero exit codes are invalid dates
+	test $targetDate1 -gt 12 && test $targetDate2 -gt 31 && return 3			# All other non-zero exit codes are invalid dates
+
 
 	return 1
 }
@@ -193,8 +196,18 @@ newEvent(){											# Generate new events and write them to the calendar file
 					done
 					exit 0
 				;;
-				weekly)								
-				
+				weekly)
+					iterationsDone=0
+					eventDateCreateRaw="$2"
+					mathDate=$(mathable $eventDateCreateRaw)
+					while [ $iterationsDone -lt $iterations ]; do
+
+						newDate=$(date -d "$mathDate +$iterationsDone week")
+						newEvent "$eventDetailsCreate" "$newDate"
+						((iterationsDone=iterationsDone+1))
+						
+					done
+					exit 0					
 				;;
 				yearly)								
 				
@@ -202,21 +215,6 @@ newEvent(){											# Generate new events and write them to the calendar file
 			esac	
 	esac
 	
-	# Before doing anything else, is the new event's date the first event?
-#	test -z "${calFile[0]}" && echo "\"$eventDetailsCreate\"" >> "$calFileDest" && echo "$eventDateCreate" >> "$calFileDest" && return 0
-#
-#	while [ $y -lt ${#calFile[@]} ]; do
-#
-#		lineDate=$(date -d "${calFile[$y]}" "+%s")		# Convert dates to seconds since the epoch
-#		userDate=$(date -d "$eventDateCreate" "+%s")
-#		
-#		# If the new event's date is newer than the current line being checked, place it in its position
-#		test $userDate -lt $lineDate && echo younger && sed -i "$y i\\$eventDateCreate" "$calFileDest" && sed -i "$y i\\\"$eventDetailsCreate\"" "$calFileDest" && return 0
-#
-#		((y=y+2))
-#		((x=x+2))
-#	done
-#	# If event is not younger than any event, append it to the end of the cal file.
 	echo "\"$eventDetailsCreate\"" 		>> "$calFileDest"
 	echo "$eventDateCreate" 		>> "$calFileDest"
 
