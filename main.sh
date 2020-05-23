@@ -179,10 +179,10 @@ newEvent(){											# Generate new events and write them to the calendar file
 
 	case $3 in
 		yes|y)
-			printf "Input repeat period (daily): "; read -r period
+			printf "Input repeat period (daily,weekly,yearly): "; read -r period
 			printf "Iterations: "; read -r iterations
 			case $period in
-				daily)	
+				daily|day)	
 					iterationsDone=0
 					eventDateCreateRaw="$2"
 					mathDate=$(mathable $eventDateCreateRaw)
@@ -196,7 +196,7 @@ newEvent(){											# Generate new events and write them to the calendar file
 					done
 					exit 0
 				;;
-				weekly)
+				weekly|week)
 					iterationsDone=0
 					eventDateCreateRaw="$2"
 					mathDate=$(mathable $eventDateCreateRaw)
@@ -209,8 +209,22 @@ newEvent(){											# Generate new events and write them to the calendar file
 					done
 					exit 0					
 				;;
-				yearly)								
-				
+				yearly|year)	
+					iterationsDone=0
+					eventDateCreateRaw="$2"
+					mathDate=$(mathable $eventDateCreateRaw)
+					while [ $iterationsDone -lt $iterations ]; do
+
+						newDate=$(date -d "$mathDate +$iterationsDone year")
+						newEvent "$eventDetailsCreate" "$newDate"
+						((iterationsDone=iterationsDone+1))
+						
+					done
+					exit 0								
+				;;
+				*)
+					echo "Invalid repeat period"
+					exit 1
 				;;
 			esac	
 	esac
